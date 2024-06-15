@@ -192,6 +192,25 @@ namespace TestApiJWT.Services
 
             return authModel;
         }
+
+        public async Task<bool> RevokeTokenAsync(string token)
+        {
+            var user = await _userManager.Users.SingleOrDefaultAsync(u => u.RefreshTokens.Any(t => t.Token == token));
+
+            if (user == null)
+                return false;
+
+            var refreshToken = user.RefreshTokens.Single(t => t.Token == token);
+
+            if (!refreshToken.IsActive)
+                return false;
+
+            refreshToken.RevokedOn = DateTime.UtcNow;
+
+            await _userManager.UpdateAsync(user);
+
+            return true;
+        }
         //refresh token
         private RefreshToken GenerateRefreshToken()
         {

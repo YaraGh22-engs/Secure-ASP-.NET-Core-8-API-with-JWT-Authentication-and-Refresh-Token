@@ -27,6 +27,10 @@ namespace TestApiJWT.Controllers
             if (!result.IsAuthenticated)
                 return BadRequest(result.Message);
 
+            if (!string.IsNullOrEmpty(result.RefreshToken))
+                SetRefreshTokenInCookie(result.RefreshToken, result.RefreshTokenExpiration);
+
+
             return Ok(result);
         }
 
@@ -76,6 +80,22 @@ namespace TestApiJWT.Controllers
             SetRefreshTokenInCookie(result.RefreshToken, result.RefreshTokenExpiration);
 
             return Ok(result);
+        }
+
+        [HttpPost("revokeToken")]
+        public async Task<IActionResult> RevokeToken([FromBody] RevokeToken model)
+        {
+            var token = model.Token ?? Request.Cookies["refreshToken"];
+
+            if (string.IsNullOrEmpty(token))
+                return BadRequest("Token is required!");
+
+            var result = await _authService.RevokeTokenAsync(token);
+
+            if (!result)
+                return BadRequest("Token is invalid!");
+
+            return Ok();
         }
 
         private void SetRefreshTokenInCookie(string refreshToken, DateTime expires)
